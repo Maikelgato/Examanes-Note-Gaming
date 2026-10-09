@@ -1,0 +1,674 @@
+
+
+Copyright (C) 2026 KittyFlashEstudios. Todos los derechos reservados. Queda prohibida la reproducción, distribución o modificación total o parcial de este código sin autorización expresa.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Exam Quest Log - Crono Academia</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for gaming icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Press Start 2P & Rajdhani para Estética Cyberpunk/RPG -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        pixel: ['"Press Start 2P"', 'monospace'],
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                    },
+                    colors: {
+                        cyberdark: '#0a0b10',
+                        cybercard: '#121520',
+                        cyberborder: '#1f293d',
+                        neoncyan: '#00f0ff',
+                        neonpink: '#ff0055',
+                        neonlime: '#39ff14',
+                        neonyellow: '#ffe600',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0a0b10;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        /* Barra de desplazamiento personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0b10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+        /* Efecto de líneas de escaneo CRT estilo arcade */
+        .crt::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 99999;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+        }
+        .glow-pink {
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
+        }
+        .text-glow-cyan {
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+        }
+        .cyber-btn {
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.2s ease;
+        }
+        .cyber-btn:hover {
+            transform: translateY(-2px);
+        }
+        .cyber-card {
+            border: 1px solid #1f293d;
+            background: rgba(18, 21, 32, 0.85);
+            backdrop-filter: blur(10px);
+        }
+        .cyber-card:hover {
+            border-color: #00f0ff;
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="crt min-h-screen text-slate-100 flex flex-col justify-between selection:bg-neoncyan selection:text-black">
+
+    <!-- CABECERA / HUD DEL JUGADOR -->
+    <header class="border-b border-cyberborder bg-cyberdark/90 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo y Título -->
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-neoncyan to-blue-600 rounded flex items-center justify-center glow-cyan">
+                    <i class="fa-solid fa-gamepad text-2xl text-black"></i>
+                </div>
+                <div>
+                    <h1 class="pixel-font text-xs sm:text-sm text-neoncyan tracking-wider text-glow-cyan">REGISTRO_EXÁMENES.EXE</h1>
+                    <p class="text-xs text-slate-400 tracking-widest uppercase">Sistema v2.4 // Gestor de Campañas Académicas</p>
+                </div>
+            </div>
+
+            <!-- Estadísticas RPG del Jugador -->
+            <div class="flex items-center gap-4 bg-cybercard border border-cyberborder px-4 py-2 rounded-lg glow-cyan w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <div class="w-10 h-10 rounded-full bg-neonpink/20 border-2 border-neonpink flex items-center justify-center text-neonpink font-bold pixel-font text-xs" id="player-level">NIV 1</div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between gap-4">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider" id="player-title">Estudiante Novato</span>
+                            <span class="text-xs text-neoncyan font-mono" id="xp-text">0 / 100 EXP</span>
+                        </div>
+                        <!-- Barra de Progreso de EXP -->
+                        <div class="w-36 sm:w-48 h-2.5 bg-slate-800 rounded-full overflow-hidden mt-1 border border-slate-700">
+                            <div id="xp-bar" class="h-full bg-gradient-to-r from-neoncyan to-neonlime transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botón de Audio y Restablecer Datos -->
+                <div class="flex items-center gap-2 border-l border-slate-800 pl-4">
+                    <button onclick="toggleAudio()" id="audio-btn" title="Activar/Desactivar Sonido" class="w-9 h-9 rounded bg-slate-800 hover:bg-slate-700 text-neoncyan flex items-center justify-center transition border border-slate-700">
+                        <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+                    </button>
+                    <button onclick="resetDataModal()" title="Reiniciar Todos los Datos" class="w-9 h-9 rounded bg-slate-800 hover:bg-red-900/50 text-red-400 flex items-center justify-center transition border border-slate-700">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <!-- COLUMNA IZQUIERDA: Estadísticas rápidas y Formulario de Nueva Misión -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            
+            <!-- Panel de Estadísticas -->
+            <div class="cyber-card p-5 rounded-lg border border-cyberborder relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-neoncyan/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                <h3 class="pixel-font text-[10px] text-neonyellow tracking-wide mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> HUD_ESTADÍSTICAS
+                </h3>
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <div class="bg-slate-900/80 p-3 rounded border border-slate-800 text-center">
+                        <span class="block text-2xl font-bold font-rajdhani text-neoncyan" id="stat-active">0</span>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Misiones Activas</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded border border-slate-800 text-center">
+                        <span class="block text-2xl font-bold font-rajdhani text-neonlime" id="stat-completed">0</span>
+                        <span class="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Derrotados</span>
+                    </div>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded border border-slate-800 flex items-center justify-between">
+                    <span class="text-xs uppercase font-bold text-slate-300">Total Exámenes</span>
+                    <span class="text-lg font-bold font-rajdhani text-neonyellow" id="stat-total">0</span>
+                </div>
+            </div>
+
+            <!-- Formulario de Nuevo Examen / Misión -->
+            <div class="cyber-card p-5 rounded-lg border border-cyberborder relative shadow-xl">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-neonpink/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                <h3 class="pixel-font text-[10px] text-neonpink tracking-wide mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle"></i> NUEVA_MISIÓN
+                </h3>
+
+                <form id="exam-form" onsubmit="handleExamSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Título del Examen</label>
+                        <input type="text" id="exam-title" required placeholder="Ej: Examen Final de Redes" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-neoncyan transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Asignatura / Materia</label>
+                        <input type="text" id="exam-subject" required placeholder="Ej: Sistemas y Redes" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-neoncyan transition">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Fecha Límite</label>
+                            <input type="date" id="exam-date" required 
+                                class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-neoncyan transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Dificultad</label>
+                            <select id="exam-difficulty" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-neoncyan transition">
+                                <option value="Normal">Normal (Rango C)</option>
+                                <option value="Hard">Difícil (Rango B)</option>
+                                <option value="Legendary">Legendario (Rango A)</option>
+                                <option value="Nightmare">Pesadilla (Rango S)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-slate-400 mb-1 font-semibold">Notas / Lore de la Misión</label>
+                        <textarea id="exam-notes" rows="2" placeholder="Capítulos a repasar, fórmulas, notas del profesor..." 
+                            class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-neoncyan transition resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-neoncyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold uppercase tracking-wider text-sm cyber-btn flex items-center justify-center gap-2 shadow-lg glow-cyan transition">
+                        <i class="fa-solid fa-scroll"><span>ACEPTAR MISIÓN</span></i>
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- COLUMNA DERECHA: Lista de Misiones, Filtros y Buscador -->
+        <div class="lg:col-span-3 flex flex-col gap-5">
+            
+            <!-- Barra de Filtros y Ordenamiento -->
+            <div class="cyber-card p-4 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                
+                <!-- Botones de Filtro -->
+                <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
+                    <button onclick="setFilter('all')" id="filter-all" class="px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition bg-neoncyan text-black glow-cyan">
+                        Todas
+                    </button>
+                    <button onclick="setFilter('active')" id="filter-active" class="px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+                        Activas
+                    </button>
+                    <button onclick="setFilter('completed')" id="filter-completed" class="px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+                        Derrotadas
+                    </button>
+                </div>
+
+                <!-- Buscador y Selector de Orden -->
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="relative flex-grow sm:flex-grow-0">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="search-input" oninput="renderQuests()" placeholder="Buscar misiones..." 
+                            class="w-full sm:w-48 bg-slate-900 border border-slate-700 rounded pl-9 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-neoncyan transition">
+                    </div>
+
+                    <select id="sort-select" onchange="renderQuests()" class="bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-neoncyan transition">
+                        <option value="date-asc">Ordenar: Más cercana</option>
+                        <option value="date-desc">Ordenar: Más lejana</option>
+                        <option value="difficulty">Ordenar: Dificultad</option>
+                        <option value="title">Ordenar: Título (A-Z)</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Contenedor de la Lista de Exámenes -->
+            <div id="quest-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Los exámenes se inyectarán dinámicamente aquí -->
+            </div>
+
+            <!-- Estado Vacío (Oculto por defecto) -->
+            <div id="empty-state" class="hidden cyber-card p-12 text-center rounded-lg flex flex-col items-center justify-center gap-3 border border-dashed border-slate-700">
+                <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 text-2xl mb-1">
+                    <i class="fa-solid fa-ghost"></i>
+                </div>
+                <h3 class="pixel-font text-xs text-slate-300">NO SE ENCONTRARON MISIONES</h3>
+                <p class="text-sm text-slate-500 max-w-sm">Tu registro de misiones está limpio. Añade un nuevo examen en el panel izquierdo para comenzar tu campaña académica.</p>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Ventana Modal de Alerta / Sistema -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[99999] hidden flex items-center justify-center p-4">
+        <div class="cyber-card p-6 rounded-lg max-w-md w-full border border-neoncyan glow-cyan animate-pulse-slow">
+            <h3 id="modal-title" class="pixel-font text-xs text-neoncyan mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation"></i> ALERTA DE SISTEMA
+            </h3>
+            <p id="modal-message" class="text-slate-300 text-sm mb-6 leading-relaxed">Mensaje del sistema aquí...</p>
+            <div class="flex justify-end gap-3" id="modal-buttons">
+                <button onclick="closeModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs uppercase font-bold tracking-wider transition border border-slate-600">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie de página -->
+    <footer class="border-t border-cyberborder py-4 text-center text-xs text-slate-500 bg-cyberdark mt-8">
+        <p>ACADEMIC_QUEST_LOG &copy; 2026 // GESTOR DE EXÁMENES RETRO-FUTURISTA // PERSISTENCIA LOCAL ACTIVA</p>
+    </footer>
+
+    <!-- LÓGICA DE JUEGO Y AUDIO (JavaScript) -->
+    <script>
+        // --- SINTETIZADOR DE EFECTOS DE SONIDO 8-BIT / CYBERPUNK (Web Audio API) ---
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioEnabled) return;
+            try {
+                initAudio();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.05);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'complete') {
+                    // Fanfarria de victoria
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                    notes.forEach((freq, index) => {
+                        const subOsc = audioCtx.createOscillator();
+                        const subGain = audioCtx.createGain();
+                        subOsc.type = 'triangle';
+                        subOsc.frequency.setValueAtTime(freq, now + index * 0.08);
+                        subOsc.connect(subGain);
+                        subGain.connect(audioCtx.destination);
+                        subGain.gain.setValueAtTime(0.08, now + index * 0.08);
+                        subGain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.15);
+                        subOsc.start(now + index * 0.08);
+                        subOsc.stop(now + index * 0.08 + 0.15);
+                    });
+                } else if (type === 'add') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'delete') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.15);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                }
+            } catch (e) {
+                console.log("Audio no permitido o no soportado", e);
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('audio-icon');
+            if (audioEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+                showModal("Efectos de Audio", "Efectos de sonido activados.");
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                showModal("Efectos de Audio", "Efectos de sonido desactivados.");
+            }
+            playSound('click');
+        }
+
+        // --- VENTANA MODAL PERSONALIZADA ---
+        function showModal(title, message, callback = null) {
+            document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-terminal"></i> ${title}`;
+            document.getElementById('modal-message').innerText = message;
+            const buttonsContainer = document.getElementById('modal-buttons');
+            
+            if (callback) {
+                buttonsContainer.innerHTML = `
+                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs uppercase font-bold transition border border-slate-600">Cancelar</button>
+                    <button id="modal-confirm-btn" class="px-4 py-2 bg-neonpink hover:bg-pink-600 text-black font-bold uppercase tracking-wider text-xs rounded transition glow-pink">Confirmar</button>
+                `;
+                document.getElementById('modal-confirm-btn').onclick = () => {
+                    callback();
+                    closeModal();
+                };
+            } else {
+                buttonsContainer.innerHTML = `
+                    <button onclick="closeModal()" class="px-5 py-2 bg-neoncyan hover:bg-cyan-400 text-black font-bold uppercase tracking-wider text-xs rounded transition glow-cyan">Entendido</button>
+                `;
+            }
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+            playSound('click');
+        }
+
+        function resetDataModal() {
+            showModal("REINICIAR DATOS", "¿Estás seguro de que deseas borrar todas tus misiones y reiniciar tu progreso?", () => {
+                localStorage.clear();
+                quests = [];
+                playerStats = { xp: 0, level: 1, title: 'Estudiante Novato' };
+                saveData();
+                renderQuests();
+                playSound('delete');
+            });
+        }
+
+        // --- ESTADO DE LA APLICACIÓN Y ALMACENAMIENTO ---
+        let quests = JSON.parse(localStorage.getItem('academic_quests')) || [
+            { id: 'q-1', title: 'Examen de Sistemas Operativos', subject: 'SMR', date: '2026-10-20', difficulty: 'Nightmare', notes: 'Repasar comandos de consola y permisos NTFS.', completed: false, xpReward: 200 },
+            { id: 'q-2', title: 'Práctica de Enrutamiento IP', subject: 'Redes Locales', date: '2026-10-25', difficulty: 'Hard', notes: 'Configuración en Cisco Packet Tracer.', completed: false, xpReward: 100 }
+        ];
+
+        let playerStats = JSON.parse(localStorage.getItem('academic_player')) || {
+            xp: 75,
+            level: 1,
+            title: 'Estudiante Novato'
+        };
+
+        let currentFilter = 'all';
+
+        function saveData() {
+            localStorage.setItem('academic_quests', JSON.stringify(quests));
+            localStorage.setItem('academic_player', JSON.stringify(playerStats));
+            updatePlayerHUD();
+        }
+
+        // --- SISTEMA DE PROGRESIÓN DEL JUGADOR ---
+        function addXP(amount) {
+            playerStats.xp += amount;
+            let xpNeeded = playerStats.level * 100;
+            if (playerStats.xp >= xpNeeded) {
+                playerStats.xp -= xpNeeded;
+                playerStats.level++;
+                updatePlayerTitle();
+                playSound('complete');
+                showModal("¡SUBIDA DE NIVEL!", `¡Felicitaciones! ¡Has alcanzado el Nivel ${playerStats.level} (${playerStats.title})!`);
+            }
+            saveData();
+        }
+
+        function updatePlayerTitle() {
+            const titles = ['Estudiante Novato', 'Aprendiz Académico', 'Adepto Arcano', 'Hechicero de Exámenes', 'Archimago del Saber'];
+            let index = Math.min(playerStats.level - 1, titles.length - 1);
+            playerStats.title = titles[index];
+        }
+
+        function updatePlayerHUD() {
+            const xpNeeded = playerStats.level * 100;
+            const pct = Math.min(100, (playerStats.xp / xpNeeded) * 100);
+            
+            document.getElementById('player-level').innerText = `NIV ${playerStats.level}`;
+            document.getElementById('player-title').innerText = playerStats.title;
+            document.getElementById('xp-text').innerText = `${playerStats.xp} / ${xpNeeded} EXP`;
+            document.getElementById('xp-bar').style.width = `${pct}%`;
+
+            const activeCount = quests.filter(q => !q.completed).length;
+            const completedCount = quests.filter(q => q.completed).length;
+            document.getElementById('stat-active').innerText = activeCount;
+            document.getElementById('stat-completed').innerText = completedCount;
+            document.getElementById('stat-total').innerText = quests.length;
+        }
+
+        // --- CREACIÓN DE NUEVA MISIÓN ---
+        function handleExamSubmit(event) {
+            event.preventDefault();
+            playSound('add');
+
+            const title = document.getElementById('exam-title').value.trim();
+            const subject = document.getElementById('exam-subject').value.trim();
+            const date = document.getElementById('exam-date').value;
+            const difficulty = document.getElementById('exam-difficulty').value;
+            const notes = document.getElementById('exam-notes').value.trim();
+
+            let xpReward = 50;
+            if (difficulty === 'Hard') xpReward = 100;
+            if (difficulty === 'Legendary') xpReward = 150;
+            if (difficulty === 'Nightmare') xpReward = 200;
+
+            const newQuest = {
+                id: 'q-' + Date.now(),
+                title,
+                subject,
+                date,
+                difficulty,
+                notes,
+                completed: false,
+                xpReward
+            };
+
+            quests.push(newQuest);
+            saveData();
+            renderQuests();
+
+            document.getElementById('exam-form').reset();
+            showModal("MISIÓN ACEPTADA", `¡Se ha añadido exitosamente el examen: "${title}"!`);
+        }
+
+        // --- FILTROS Y ORDENAMIENTO ---
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            playSound('click');
+            
+            ['all', 'active', 'completed'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filterType) {
+                    btn.className = "px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition bg-neoncyan text-black glow-cyan";
+                } else {
+                    btn.className = "px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700";
+                }
+            });
+
+            renderQuests();
+        }
+
+        // --- RENDERIZAR MISIONES ---
+        function renderQuests() {
+            const listContainer = document.getElementById('quest-list');
+            const emptyState = document.getElementById('empty-state');
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+            const sortMode = document.getElementById('sort-select').value;
+
+            let filtered = quests.filter(q => {
+                if (currentFilter === 'active') return !q.completed;
+                if (currentFilter === 'completed') return q.completed;
+                return true;
+            });
+
+            if (searchQuery) {
+                filtered = filtered.filter(q => 
+                    q.title.toLowerCase().includes(searchQuery) || 
+                    q.subject.toLowerCase().includes(searchQuery) ||
+                    q.notes.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            filtered.sort((a, b) => {
+                if (sortMode === 'date-asc') return new Date(a.date) - new Date(b.date);
+                if (sortMode === 'date-desc') return new Date(b.date) - new Date(a.date);
+                if (sortMode === 'title') return a.title.localeCompare(b.title);
+                if (sortMode === 'difficulty') {
+                    const diffWeight = { 'Nightmare': 4, 'Legendary': 3, 'Hard': 2, 'Normal': 1 };
+                    return diffWeight[b.difficulty] - diffWeight[a.difficulty];
+                }
+                return 0;
+            });
+
+            listContainer.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(q => {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const examDate = new Date(q.date);
+                const diffTime = examDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                let urgencyBadge = '';
+                if (!q.completed) {
+                    if (diffDays < 0) {
+                        urgencyBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-950 text-red-400 border border-red-800 animate-pulse"><i class="fa-solid fa-skull"></i> Vencido (${Math.abs(diffDays)}d)</span>`;
+                    } else if (diffDays === 0) {
+                        urgencyBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-950 text-neonyellow border border-amber-800 animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i> ¡ES HOY!</span>`;
+                    } else if (diffDays <= 3) {
+                        urgencyBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-orange-950 text-orange-400 border border-orange-800"><i class="fa-solid fa-clock"></i> Faltan ${diffDays} días</span>`;
+                    } else {
+                        urgencyBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-300 border border-slate-700"><i class="fa-regular fa-calendar"></i> ${diffDays} días restantes</span>`;
+                    }
+                } else {
+                    urgencyBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-950 text-neonlime border border-emerald-800"><i class="fa-solid fa-check"></i> DERROTADO</span>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = `cyber-card p-4 rounded-lg flex flex-col justify-between gap-3 transition relative overflow-hidden ${q.completed ? 'opacity-60 bg-slate-950/40' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 bg-slate-800 text-neoncyan rounded border border-slate-700">${q.subject}</span>
+                            <h4 class="text-lg font-bold text-slate-100 mt-1 ${q.completed ? 'line-through text-slate-400' : ''}">${q.title}</h4>
+                        </div>
+                        <span class="text-xs font-mono font-bold text-purple-400">+${q.xpReward} EXP</span>
+                    </div>
+
+                    ${q.notes ? `<p class="text-xs text-slate-400 italic">"${q.notes}"</p>` : ''}
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 mt-auto">
+                        <div class="flex items-center gap-2">
+                            ${urgencyBadge}
+                            <span class="text-[10px] uppercase text-slate-500 font-bold">(${q.difficulty})</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="toggleComplete('${q.id}')" title="${q.completed ? 'Marcar como pendiente' : 'Derrotar examen'}" class="w-8 h-8 rounded bg-slate-800 hover:bg-slate-700 ${q.completed ? 'text-neonlime border border-neonlime/40' : 'text-neoncyan border border-slate-700'} flex items-center justify-center transition">
+                                <i class="fa-solid ${q.completed ? 'fa-rotate-left' : 'fa-sword'}"></i>
+                            </button>
+                            <button onclick="deleteQuest('${q.id}')" title="Eliminar misión" class="w-8 h-8 rounded bg-slate-800 hover:bg-red-900/50 text-red-400 border border-slate-700 flex items-center justify-center transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        function toggleComplete(id) {
+            const quest = quests.find(q => q.id === id);
+            if (!quest) return;
+
+            quest.completed = !quest.completed;
+            if (quest.completed) {
+                addXP(quest.xpReward);
+                playSound('complete');
+            } else {
+                playerStats.xp = Math.max(0, playerStats.xp - quest.xpReward);
+                saveData();
+                playSound('delete');
+            }
+            renderQuests();
+            updatePlayerHUD();
+        }
+
+        function deleteQuest(id) {
+            showModal("ELIMINAR MISIÓN", "¿Estás seguro de que deseas eliminar este examen del registro?", () => {
+                const index = quests.findIndex(q => q.id === id);
+                if (index !== -1) {
+                    if (quests[index].completed) {
+                        playerStats.xp = Math.max(0, playerStats.xp - quests[index].xpReward);
+                    }
+                    quests.splice(index, 1);
+                    saveData();
+                    renderQuests();
+                    updatePlayerHUD();
+                    playSound('delete');
+                }
+            });
+        }
+
+        // Inicializar la interfaz al cargar la página
+        updatePlayerTitle();
+        updatePlayerHUD();
+        renderQuests();
+    </script>
+</body>
+</html>
